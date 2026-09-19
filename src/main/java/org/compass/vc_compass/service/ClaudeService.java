@@ -26,7 +26,6 @@ public class ClaudeService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("x-api-key", config.getApiKey());
-        System.out.println("DEBUG - Key being used: [" + config.getApiKey() + "]");
         headers.set("anthropic-version", "2023-06-01");
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -56,6 +55,14 @@ public class ClaudeService {
         }
     }
 
+    // Strips markdown code fences (```json ... ```) that Claude sometimes wraps JSON in
+    private String stripMarkdownFences(String raw) {
+        return raw
+                .replaceAll("(?s)```json\\s*", "")
+                .replaceAll("(?s)```\\s*", "")
+                .trim();
+    }
+
     public ExtractionResult extractFromTranscript(String transcript) {
         String systemPrompt = """
             You are a financial transcript analyzer. Given a transcript of a video 
@@ -70,11 +77,12 @@ public class ClaudeService {
             """;
 
         String rawJson = callClaude("claude-haiku-4-5-20251001", systemPrompt, transcript);
+        String cleanedJson = stripMarkdownFences(rawJson);
 
         try {
-            return objectMapper.readValue(rawJson, ExtractionResult.class);
+            return objectMapper.readValue(cleanedJson, ExtractionResult.class);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse extraction JSON: " + rawJson, e);
+            throw new RuntimeException("Failed to parse extraction JSON: " + cleanedJson, e);
         }
     }
 }
