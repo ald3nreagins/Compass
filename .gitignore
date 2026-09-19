@@ -1,5 +1,37 @@
+# Maven build output
 target/
-.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Compiled class files
 *.class
-node_modules/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Environment / secrets
 .env
+.env.local
+application-local.properties
+
+# React / Node
+frontend/node_modules/
+node_modules/
+frontend/dist/
+frontend/.env
+frontend/build/
+
+# macOS system files
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# OS/editor junk
+*.swp
+*~
