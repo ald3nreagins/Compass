@@ -17,6 +17,6 @@ Matt
  - github:
  - linkedin:
 
-Alvin 
+Alvin Pan
  - github: https://github.com/blizzardblaze174
  - linkedin: https://www.linkedin.com/in/alvin-pan1/
