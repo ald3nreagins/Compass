@@ -21,7 +21,7 @@ app = FastAPI()
 
 '''Supports reading multiple uploadingvideos at once and then using 11 labs to parse through 
 the videos to generate a transcript '''
-@app.post("transcribe")
+@app.post("/transcribe/")
 async def transcribe (videos: Annotated[List[UploadFile], File()]):
     results = []
     for video in videos: 
