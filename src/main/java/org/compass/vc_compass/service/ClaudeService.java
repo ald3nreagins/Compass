@@ -77,7 +77,6 @@ public class ClaudeService {
             """;
 
         String rawJson = callClaude("claude-haiku-4-5-20251001", systemPrompt, transcript);
-        String cleanedJson = stripMarkdownFences(rawJson);
 
         try {
             return objectMapper.readValue(cleanedJson, ExtractionResult.class);
