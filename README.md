@@ -4,7 +4,7 @@ Tool for startups / investors to know what's worth investing in and who might be
 
 Contributors: 
 Alden Reagins 
- - github:
+ - github: 
  - linkedin:
 
 Steven Rocca
@@ -16,5 +16,5 @@ Matt
  - linkedin:
 
 Alvin 
- - github:
- - linkedin:
+ - github: https://github.com/blizzardblaze174
+ - linkedin: https://www.linkedin.com/in/alvin-pan1/
