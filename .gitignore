@@ -34,4 +34,4 @@ logs/
 
 # OS/editor junk
 *.swp
-*~
+*~load-env.sh

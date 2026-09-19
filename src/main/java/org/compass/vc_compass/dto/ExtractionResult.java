@@ -16,4 +16,13 @@ public class ExtractionResult {
     public void setKeyClaims(List<String> keyClaims) { this.keyClaims = keyClaims; }
     public List<String> getCatalysts() { return catalysts; }
     public void setCatalysts(List<String> catalysts) { this.catalysts = catalysts; }
+
+    private Boolean notApplicable;
+    private String reason;
+
+    public Boolean getNotApplicable() { return notApplicable; }
+    public void setNotApplicable(Boolean notApplicable) { this.notApplicable = notApplicable; }
+
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
 }
