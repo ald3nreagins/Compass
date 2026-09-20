@@ -19,36 +19,27 @@ public class VideoDownloadService {
     private static final String[] PYTHON_CANDIDATES = { "python", "python3", "py" };
 
     public byte[] downloadAudioFromUrl(String videoUrl) throws IOException, InterruptedException {
-        String tempId = UUID.randomUUID().toString();
-        String outputTemplate = "/tmp/" + tempId + ".%(ext)s";
+    String tempId = UUID.randomUUID().toString();
+    String outputTemplate = "/tmp/" + tempId + ".%(ext)s";
 
-        ProcessBuilder pb = new ProcessBuilder(
-                "yt-dlp",
-                "-x",
-                "--audio-format", "mp3",
-                "-o", outputTemplate,
-                videoUrl
-        );
-        pb.redirectErrorStream(true);
-        Process process = pb.start();
+    Process process = startYtDlp(outputTemplate, videoUrl);
 
-        // Capture output for debugging failures
-        String output = new String(process.getInputStream().readAllBytes());
-        int exitCode = process.waitFor();
+    String output = new String(process.getInputStream().readAllBytes());
+    int exitCode = process.waitFor();
 
-        if (exitCode != 0) {
-            throw new RuntimeException("yt-dlp failed for URL: " + videoUrl + "\nOutput: " + output);
-        }
-
-        Path audioFile = tempDir.resolve(tempId + ".mp3");
-        if (!Files.exists(audioFile)) {
-            throw new RuntimeException("Expected audio file not found after yt-dlp ran: " + audioFile);
-        }
-
-        byte[] audioBytes = Files.readAllBytes(audioFile);
-        Files.deleteIfExists(audioFile); // cleanup
-        return audioBytes;
+    if (exitCode != 0) {
+        throw new RuntimeException("yt-dlp failed for URL: " + videoUrl + "\nOutput: " + output);
     }
+
+    Path audioFile = Path.of("/tmp/" + tempId + ".mp3");
+    if (!Files.exists(audioFile)) {
+        throw new RuntimeException("Expected audio file not found after yt-dlp ran: " + audioFile);
+    }
+
+    byte[] audioBytes = Files.readAllBytes(audioFile);
+    Files.deleteIfExists(audioFile);
+    return audioBytes;
+}
 
     private Process startYtDlp(String outputTemplate, String videoUrl) throws IOException {
         IOException lastError = null;
@@ -56,13 +47,11 @@ public class VideoDownloadService {
 
         for (String pythonCmd : PYTHON_CANDIDATES) {
             List<String> command = new ArrayList<>(List.of(
-                    pythonCmd, "-m", "yt_dlp",
-                    "-x", "--audio-format", "mp3"
-            ));
+        pythonCmd, "-m", "yt_dlp",
+        "-x", "--audio-format", "mp3",
+        "--extractor-args", "youtube:player_client=android"
+));
 
-            // If we found ffmpeg somewhere yt-dlp wouldn't otherwise look,
-            // point it there explicitly. If ffmpeg is already on PATH,
-            // yt-dlp finds it on its own and this is simply skipped.
             if (ffmpegDir != null) {
                 command.add("--ffmpeg-location");
                 command.add(ffmpegDir);
@@ -79,7 +68,6 @@ public class VideoDownloadService {
                 return pb.start();
             } catch (IOException e) {
                 lastError = e;
-                // try the next python interpreter name
             }
         }
 
@@ -91,12 +79,6 @@ public class VideoDownloadService {
         );
     }
 
-    /**
-     * Looks for ffmpeg in the most common places it ends up on each OS,
-     * without requiring anyone to configure anything. Falls back to relying
-     * on PATH (returns empty) if none of these turn anything up — yt-dlp
-     * will then behave exactly as if this method didn't exist.
-     */
     private Optional<String> findFfmpegDirectory() {
         String os = System.getProperty("os.name", "").toLowerCase();
         boolean isWindows = os.contains("win");
@@ -107,16 +89,14 @@ public class VideoDownloadService {
         if (isWindows) {
             String localAppData = System.getenv("LOCALAPPDATA");
             if (localAppData != null) {
-                // Covers `winget install ffmpeg` / Gyan.FFmpeg, wherever its
-                // version-numbered subfolder happens to land.
                 candidates.add(Path.of(localAppData, "Microsoft", "WinGet", "Packages"));
             }
             candidates.add(Path.of("C:\\ffmpeg\\bin\\ffmpeg.exe"));
             candidates.add(Path.of("C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe"));
         } else {
-            candidates.add(Path.of("/opt/homebrew/bin/ffmpeg")); // Mac (Apple Silicon + Homebrew)
-            candidates.add(Path.of("/usr/local/bin/ffmpeg"));    // Mac (Intel + Homebrew) / Linux
-            candidates.add(Path.of("/usr/bin/ffmpeg"));          // Linux (apt/yum installs)
+            candidates.add(Path.of("/opt/homebrew/bin/ffmpeg"));
+            candidates.add(Path.of("/usr/local/bin/ffmpeg"));
+            candidates.add(Path.of("/usr/bin/ffmpeg"));
         }
 
         for (Path candidate : candidates) {
@@ -125,8 +105,6 @@ public class VideoDownloadService {
                     return Optional.of(candidate.getParent().toString());
                 }
                 if (Files.isDirectory(candidate)) {
-                    // Search a few levels deep (handles nested package-manager
-                    // folder structures like WinGet's).
                     try (var stream = Files.walk(candidate, 6)) {
                         Optional<Path> found = stream
                                 .filter(p -> p.getFileName().toString().equalsIgnoreCase(exeName))
@@ -137,7 +115,6 @@ public class VideoDownloadService {
                     }
                 }
             } catch (IOException ignored) {
-                // this candidate wasn't accessible — just try the next one
             }
         }
 

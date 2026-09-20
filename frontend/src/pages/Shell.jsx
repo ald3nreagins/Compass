@@ -17,7 +17,7 @@ export const COLORS = {
 };
 
 const NAV_ROUTES = {
-  Overview: '/',
+  Overview: '/dashboard',
   Analyze: '/analyze',
   Portfolio: '/portfolio',
   Signals: '/signals',
@@ -42,7 +42,7 @@ export default function Shell({ children }) {
 
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: COLORS.border }}>
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/dashboard" className="flex items-center gap-2">
           <span style={{ color: COLORS.accent }} className="text-lg">◇</span>
           <span className="font-semibold text-sm tracking-wide">Compass</span>
         </Link>
