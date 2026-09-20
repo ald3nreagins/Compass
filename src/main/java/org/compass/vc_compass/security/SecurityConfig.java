@@ -54,9 +54,10 @@ public DaoAuthenticationProvider authenticationProvider() {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .anyRequest().authenticated()
-            )
+            .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers("/api/portfolio/**").permitAll()
+            .anyRequest().authenticated()
+)
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
