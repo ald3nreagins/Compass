@@ -140,9 +140,13 @@ export default function Shell({ children }) {
   >
     Settings
   </Link>
-  <span className="text-left text-sm px-3 py-2 rounded-md" style={{ color: COLORS.textMuted }}>
-    Sources
-  </span>
+  <Link
+  to="/sources"
+  className="text-left text-sm px-3 py-2 rounded-md transition-colors"
+  style={location.pathname === '/sources' ? { background: COLORS.elevated, color: COLORS.text } : { color: COLORS.textMuted }}
+>
+  Sources
+</Link>
 </nav>
         </aside>
 
