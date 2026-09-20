@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, saveToken } from '../api';
+import { api, saveToken, saveCurrentUserEmail } from '../api';
 import { COLORS } from './Shell';
 
 export default function Login() {
@@ -21,7 +21,8 @@ export default function Login() {
         ? await api.signup(email, password, name)
         : await api.login(email, password);
       saveToken(data.token);
-      navigate('/analyze');
+      saveCurrentUserEmail(data.email);
+      navigate('/analyze'); 
     } catch (err) {
       setError(err.message || 'Something went wrong');
     } finally {

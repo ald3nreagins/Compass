@@ -54,3 +54,20 @@ export function clearToken() {
 export function isLoggedIn() {
   return !!getToken();
 }
+
+export function getCurrentUserEmail() {
+  return localStorage.getItem('userEmail');
+}
+
+export function saveCurrentUserEmail(email) {
+  localStorage.setItem('userEmail', email);
+}
+
+export function getDefaultPortfolio() {
+  const raw = localStorage.getItem('defaultPortfolio');
+  return raw ? raw.split(',').map((c) => c.trim()).filter(Boolean) : [];
+}
+
+export function saveDefaultPortfolio(companies) {
+  localStorage.setItem('defaultPortfolio', companies.join(', '));
+}

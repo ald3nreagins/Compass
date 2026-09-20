@@ -7,6 +7,7 @@ import Analyze from './pages/Analyze';
 import Portfolio from './pages/Portfolio';
 import Signals from './pages/Signals';
 import Candidates from './pages/Candidates';
+import Settings from './pages/Settings';
 
 function RequireAuth({ children }) {
   return isLoggedIn() ? children : <Navigate to="/login" replace />;
@@ -57,6 +58,13 @@ function App() {
                 <Candidates />
               </RequireAuth>
             }
+          />
+          <Route path="/settings" 
+          element={
+          <RequireAuth>
+            <Settings />
+            </RequireAuth>
+          } 
           />
         </Routes>
       </BrowserRouter>

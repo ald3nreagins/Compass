@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Shell, { COLORS } from './Shell';
-import { api } from '../api';
+import { api, getDefaultPortfolio } from '../api';
 
 function titleCase(str) {
   if (typeof str !== 'string') return str;
@@ -23,7 +23,7 @@ function toBullets(value) {
 
 export default function Analyze() {
   const [url, setUrl] = useState('');
-  const [portfolioInput, setPortfolioInput] = useState('');
+  const [portfolioInput, setPortfolioInput] = useState(() => getDefaultPortfolio().join(', '));
   const [mode, setMode] = useState('pitch'); // 'pitch' | 'portfolio'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
