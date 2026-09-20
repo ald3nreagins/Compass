@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Shell, { COLORS } from './Shell';
 import { api } from '../api';
 
@@ -136,7 +137,6 @@ function ExpandedDetail({ analysis, type }) {
     );
   }
 
-  // pitch
   return (
     <div>
       <BulletField label="Company" value={analysis.companyName} />
@@ -156,6 +156,8 @@ export default function Signals() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState(null);
+  const [searchParams] = useSearchParams();
+  const query = (searchParams.get('q') || '').toLowerCase();
 
   useEffect(() => {
     api
@@ -170,9 +172,42 @@ export default function Signals() {
       });
   }, []);
 
+  // Parse each submission's analysis once up front so both filtering and
+  // rendering work from the same parsed object.
+  const parsed = submissions.map((s) => {
+    let analysis = {};
+    try {
+      analysis = JSON.parse(s.analysisJson);
+    } catch {
+      analysis = {};
+    }
+    return { ...s, analysis };
+  });
+
+  const filtered = query
+    ? parsed.filter(({ sourceUrl, analysis, analysisType }) => {
+        const haystack = [
+          sourceUrl,
+          summaryFor(analysis, analysisType),
+          ...(analysis.affectedCompanies || []).map((c) => c.companyName),
+          analysis.companyName,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(query);
+      })
+    : parsed;
+
   return (
     <Shell>
-      <h1 className="text-lg font-semibold mb-6">Signals</h1>
+      <h1 className="text-lg font-semibold mb-2">Signals</h1>
+
+      {query && (
+        <p className="text-sm mb-4" style={{ color: COLORS.textMuted }}>
+          Showing results for "{query}"
+        </p>
+      )}
 
       {loading && (
         <div
@@ -192,27 +227,23 @@ export default function Signals() {
         </div>
       )}
 
-      {!loading && !error && submissions.length === 0 && (
+      {!loading && !error && filtered.length === 0 && (
         <div
           className="rounded-lg p-8 flex items-center justify-center"
           style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, minHeight: '200px' }}
         >
           <p className="text-sm" style={{ color: COLORS.textMuted }}>
-            No signals analyzed yet — run an analysis from the Analyze tab.
+            {query
+              ? `No signals match "${query}".`
+              : 'No signals analyzed yet — run an analysis from the Analyze tab.'}
           </p>
         </div>
       )}
 
-      {!loading && !error && submissions.length > 0 && (
+      {!loading && !error && filtered.length > 0 && (
         <div className="flex flex-col gap-3">
-          {submissions.map((s) => {
-            let analysis = {};
-            try {
-              analysis = JSON.parse(s.analysisJson);
-            } catch {
-              analysis = {};
-            }
-            const tone = TONE_COLOR[toneFor(analysis, s.analysisType)] || COLORS.accent;
+          {filtered.map((s) => {
+            const tone = TONE_COLOR[toneFor(s.analysis, s.analysisType)] || COLORS.accent;
             const isOpen = expandedId === s.id;
 
             return (
@@ -229,10 +260,10 @@ export default function Signals() {
                     <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: tone }} />
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate" style={{ color: COLORS.text }}>
-                        {statusLabelFor(analysis, s.analysisType)}
+                        {statusLabelFor(s.analysis, s.analysisType)}
                       </p>
                       <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
-                        {summaryFor(analysis, s.analysisType)}
+                        {summaryFor(s.analysis, s.analysisType)}
                       </p>
                     </div>
                   </div>
@@ -257,7 +288,7 @@ export default function Signals() {
                     <p className="text-xs mb-4 break-all" style={{ color: COLORS.textMuted }}>
                       {s.sourceUrl}
                     </p>
-                    <ExpandedDetail analysis={analysis} type={s.analysisType} />
+                    <ExpandedDetail analysis={s.analysis} type={s.analysisType} />
                   </div>
                 )}
               </div>

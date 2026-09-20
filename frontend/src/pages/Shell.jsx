@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ChevronDown, Check } from 'lucide-react';
 import { useFund } from './FundContext';
 
@@ -30,6 +30,7 @@ export default function Shell({ children }) {
   const location = useLocation();
   const { selectedFund, setSelectedFund, availableFunds } = useFund();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
   const options = ['All funds', ...availableFunds];
 
@@ -47,17 +48,23 @@ export default function Shell({ children }) {
           <span className="font-semibold text-sm tracking-wide">Compass</span>
         </Link>
 
-        <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md w-80"
-          style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-        >
-          <Search size={14} style={{ color: COLORS.textMuted }} />
-          <input
-            placeholder="Search companies, funds..."
-            className="bg-transparent outline-none text-sm w-full"
-            style={{ color: COLORS.text }}
-          />
-        </div>
+        <form
+  onSubmit={(e) => {
+    e.preventDefault();
+    const query = e.target.elements.searchInput.value.trim();
+    if (query) navigate(`/signals?q=${encodeURIComponent(query)}`);
+  }}
+  className="flex items-center gap-2 px-3 py-1.5 rounded-md w-80"
+  style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+>
+  <Search size={14} style={{ color: COLORS.textMuted }} />
+  <input
+    name="searchInput"
+    placeholder="Search signals, companies…"
+    className="bg-transparent outline-none text-sm w-full"
+    style={{ color: COLORS.text }}
+  />
+</form>
 
         <div className="flex items-center gap-4">
           <div className="relative">
