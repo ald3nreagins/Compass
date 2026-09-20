@@ -111,15 +111,23 @@ export default function Analyze() {
           className="rounded-lg p-6"
           style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
         >
-          <h2 className="text-sm font-semibold mb-3" style={{ color: COLORS.text }}>
+          <h2 className="text-sm font-semibold mb-4" style={{ color: COLORS.text }}>
             Analysis
           </h2>
-          <pre
-            className="text-xs whitespace-pre-wrap overflow-auto max-h-96 p-3 rounded-md"
-            style={{ background: COLORS.elevated, color: COLORS.textMuted }}
-          >
-            {JSON.stringify(result.analysis, null, 2)}
-          </pre>
+
+          {result.analysis.notApplicable ? (
+            <div
+              className="rounded-md p-4 text-sm"
+              style={{ background: `${COLORS.hold}1A`, color: COLORS.hold, border: `1px solid ${COLORS.hold}` }}
+            >
+              <p className="font-medium mb-1">Not applicable to VC evaluation</p>
+              <p style={{ color: COLORS.textMuted }}>{result.analysis.reason}</p>
+            </div>
+          ) : mode === 'portfolio' ? (
+            <PortfolioImpactView analysis={result.analysis} />
+          ) : (
+            <PitchAnalysisView analysis={result.analysis} />
+          )}
 
           <details className="mt-4">
             <summary className="text-sm cursor-pointer" style={{ color: COLORS.textMuted }}>
@@ -132,5 +140,86 @@ export default function Analyze() {
         </div>
       )}
     </Shell>
+  );
+}
+
+function Field({ label, value }) {
+  if (value == null || (Array.isArray(value) && value.length === 0)) return null;
+  return (
+    <div className="mb-3">
+      <p className="text-xs mb-1" style={{ color: COLORS.textMuted }}>{label}</p>
+      {Array.isArray(value) ? (
+        <ul className="text-sm list-disc list-inside" style={{ color: COLORS.text }}>
+          {value.map((v, i) => (
+            <li key={i}>{v}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm" style={{ color: COLORS.text }}>{value}</p>
+      )}
+    </div>
+  );
+}
+
+function PitchAnalysisView({ analysis }) {
+  return (
+    <div>
+      <Field label="Company" value={analysis.companyName} />
+      <Field label="Product" value={analysis.productDescription} />
+      <Field label="Target market" value={analysis.targetMarket} />
+      <Field label="Stated metrics" value={analysis.statedMetrics} />
+      <Field label="Founder credibility" value={analysis.founderCredibility} />
+      <Field label="Key claims" value={analysis.keyClaims} />
+      <Field label="Risks / concerns" value={analysis.risksOrConcerns} />
+      <Field label="Sentiment" value={analysis.sentiment} />
+      <Field label="Investment readiness" value={analysis.investmentReadiness} />
+    </div>
+  );
+}
+
+function PortfolioImpactView({ analysis }) {
+  return (
+    <div>
+      <Field label="Event summary" value={analysis.eventSummary} />
+      <Field label="Affected sectors" value={analysis.affectedSectors} />
+
+      {analysis.affectedCompanies && analysis.affectedCompanies.length > 0 && (
+        <div className="mb-3">
+          <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>
+            Affected companies
+          </p>
+          <div className="flex flex-col gap-2">
+            {analysis.affectedCompanies.map((c, i) => {
+              const impactColor =
+                c.impactDirection === 'positive'
+                  ? COLORS.add
+                  : c.impactDirection === 'negative'
+                  ? COLORS.sell
+                  : COLORS.hold;
+              return (
+                <div key={i} className="rounded-md p-3" style={{ background: COLORS.elevated }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium">{c.companyName}</span>
+                    <span
+                      className="text-xs px-2 py-0.5 rounded"
+                      style={{ color: impactColor, background: `${impactColor}1A` }}
+                    >
+                      {c.impactDirection}
+                    </span>
+                  </div>
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                    {c.rationale}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <Field label="Overall impact" value={analysis.overallImpact} />
+      <Field label="Urgency" value={analysis.urgency} />
+      <Field label="Recommended actions" value={analysis.recommendedActions} />
+    </div>
   );
 }
