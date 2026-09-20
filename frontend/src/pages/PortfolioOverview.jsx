@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ChevronDown, Check } from 'lucide-react';
 import Shell, { COLORS } from './Shell';
 import { useFund } from './FundContext';
 import { api } from '../api';
@@ -23,6 +24,16 @@ function fmtArr(v) {
   return `$${(v / 1_000_000).toFixed(1)}M`;
 }
 
+// Parses strings like "Q3 2026" into a sortable number (2026 * 4 + 3).
+// Falls back to 0 for anything that doesn't match, so unexpected formats
+// don't crash sorting — they just sort first.
+function quarterSortKey(q) {
+  const match = /Q(\d)\s*(\d{4})/i.exec(q || '');
+  if (!match) return 0;
+  const [, quarterNum, year] = match;
+  return parseInt(year, 10) * 4 + parseInt(quarterNum, 10);
+}
+
 function HealthPill({ health }) {
   const color = HEALTH_COLOR[health] || COLORS.textMuted;
   return (
@@ -45,17 +56,73 @@ function SignalBadge({ signal }) {
   );
 }
 
+function QuarterDropdown({ quarters, selected, onSelect }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
+        style={{ background: COLORS.elevated, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+      >
+        {selected || 'Select quarter'}
+        <ChevronDown size={12} style={{ color: COLORS.textMuted }} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div
+            className="absolute right-0 mt-2 w-40 rounded-md overflow-hidden z-20"
+            style={{ background: COLORS.elevated, border: `1px solid ${COLORS.border}` }}
+          >
+            {quarters.map((q) => (
+              <button
+                key={q}
+                onClick={() => {
+                  onSelect(q);
+                  setOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors"
+                style={{ color: q === selected ? COLORS.text : COLORS.textMuted }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = COLORS.surface)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                {q}
+                {q === selected && <Check size={14} style={{ color: COLORS.accent }} />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function PortfolioOverviewPage() {
   const [allCompanies, setAllCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { selectedFund } = useFund();
+  const [availableQuarters, setAvailableQuarters] = useState([]);
+  const [selectedQuarter, setSelectedQuarter] = useState(null);
+  const { selectedFund, setAvailableFunds } = useFund();
 
   useEffect(() => {
     api
       .getPortfolioHoldings()
       .then((data) => {
         setAllCompanies(data);
+
+        const uniqueFunds = Array.from(new Set(data.map((c) => c.fundName).filter(Boolean))).sort();
+        setAvailableFunds(uniqueFunds);
+
+        const uniqueQuarters = Array.from(new Set(data.map((c) => c.snapshotQuarter).filter(Boolean))).sort(
+          (a, b) => quarterSortKey(a) - quarterSortKey(b)
+        );
+        setAvailableQuarters(uniqueQuarters);
+        setSelectedQuarter(uniqueQuarters[uniqueQuarters.length - 1] || null); // default to latest
+
         setLoading(false);
       })
       .catch((err) => {
@@ -63,10 +130,15 @@ export default function PortfolioOverviewPage() {
         setError(err.message);
         setLoading(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const companies =
-    selectedFund === 'All funds' ? allCompanies : allCompanies.filter((c) => c.fundName === selectedFund);
+  // One row per company: filtered by fund AND by the single selected quarter.
+  const companies = allCompanies.filter((c) => {
+    const fundMatch = selectedFund === 'All funds' || c.fundName === selectedFund;
+    const quarterMatch = c.snapshotQuarter === selectedQuarter;
+    return fundMatch && quarterMatch;
+  });
 
   const totalValue = companies.reduce((s, c) => s + (c.arr || 0), 0) / 1_000_000;
   const accelerating = companies.filter((c) => c.healthFlag === 'ACCELERATING').length;
@@ -96,7 +168,7 @@ export default function PortfolioOverviewPage() {
           className="rounded-lg p-4 mb-6 text-sm"
           style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: COLORS.textMuted }}
         >
-          No holdings found for {selectedFund}.
+          No holdings found for {selectedFund} in {selectedQuarter}.
         </div>
       )}
 
@@ -144,8 +216,15 @@ export default function PortfolioOverviewPage() {
 
       {/* Companies table */}
       <div className="rounded-lg overflow-hidden" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
-        <div className="px-5 py-4 border-b" style={{ borderColor: COLORS.border }}>
+        <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: COLORS.border }}>
           <p className="text-sm font-medium">Portfolio companies</p>
+          {availableQuarters.length > 0 && (
+            <QuarterDropdown
+              quarters={availableQuarters}
+              selected={selectedQuarter}
+              onSelect={setSelectedQuarter}
+            />
+          )}
         </div>
         {loading ? (
           <p className="px-5 py-6 text-sm" style={{ color: COLORS.textMuted }}>Loading...</p>
@@ -164,7 +243,7 @@ export default function PortfolioOverviewPage() {
             <tbody>
               {companies.map((c, i) => (
                 <tr
-                  key={`${c.companyName}-${i}`}
+                  key={`${c.companyName}-${c.fundName}-${i}`}
                   className="border-t transition-colors"
                   style={{ borderColor: COLORS.border }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = COLORS.elevated)}

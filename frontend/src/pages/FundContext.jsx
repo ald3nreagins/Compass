@@ -1,23 +1,13 @@
 import { createContext, useContext, useState } from 'react';
 
-export const FUNDS = [
-  'Alumni Ventures',
-  'Andreessen Horowitz',
-  'Bpifrance',
-  'Gaingels',
-  'General Catalyst',
-  'Google for Startups',
-  'Plug and Play',
-  'Techstars',
-  'Y Combinator',
-];
-
 const FundContext = createContext(null);
 
 export function FundProvider({ children }) {
   const [selectedFund, setSelectedFund] = useState('All funds');
+  const [availableFunds, setAvailableFunds] = useState([]);
+
   return (
-    <FundContext.Provider value={{ selectedFund, setSelectedFund }}>
+    <FundContext.Provider value={{ selectedFund, setSelectedFund, availableFunds, setAvailableFunds }}>
       {children}
     </FundContext.Provider>
   );

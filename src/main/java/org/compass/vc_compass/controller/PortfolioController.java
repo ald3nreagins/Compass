@@ -1,7 +1,7 @@
 package org.compass.vc_compass.controller;
 
-import org.compass.vc_compass.model.Holding;
-import org.compass.vc_compass.repository.HoldingRepository;
+import org.compass.vc_compass.entity.PortfolioHolding;
+import org.compass.vc_compass.repository.PortfolioHoldingRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,14 +10,14 @@ import java.util.List;
 @RequestMapping("/api/portfolio")
 public class PortfolioController {
 
-    private final HoldingRepository holdingRepository;
+    private final PortfolioHoldingRepository repository;
 
-    public PortfolioController(HoldingRepository holdingRepository) {
-        this.holdingRepository = holdingRepository;
+    public PortfolioController(PortfolioHoldingRepository repository) {
+        this.repository = repository;
     }
 
     @GetMapping("/holdings")
-    public List<Holding> getHoldings() {
-        return holdingRepository.findAll();
+    public List<PortfolioHolding> getHoldings() {
+        return repository.findAll();
     }
 }
