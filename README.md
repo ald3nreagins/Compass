@@ -2,7 +2,7 @@
 
 **Know before the market does.**
 
-Compass is a due-diligence tool for venture capital investors and startup founders. It transcribes and analyzes pitch videos, news, and market events — turning unstructured video, audio, and text into structured, sourced signals for investment decisions.
+Compass is a due-diligence tool for venture capital investors and startup founders. It transcribes and analyzes pitch videos, news, and market events; turning unstructured video, audio, and text into structured, sourced signals for investment decisions.
 
 Built at Steelhacks, September 19–20, 2026.
 
@@ -10,7 +10,7 @@ Built at Steelhacks, September 19–20, 2026.
 
 ## The Problem
 
-Venture teams review dozens of pitch videos, market updates, and news clips every week — most of it unstructured video and audio that never makes it into a searchable record. By the time something relevant surfaces, the moment to act on it has often passed.
+Venture teams review dozens of pitch videos, market updates, and news clips every week. Most of it unstructured video and audio that never makes it into a searchable record. By the time something relevant surfaces, the moment to act on it has often passed.
 
 On the other side, founders raising capital have no easy way to know which investors are actually a fit for their business, or to get structured feedback on how their pitch reads to an outside evaluator.
 
@@ -19,7 +19,7 @@ On the other side, founders raising capital have no easy way to know which inves
 **For investors:**
 - Upload a portfolio of companies you've invested in
 - Submit a video, article, or block of text — a news clip, an earnings call, a competitor announcement
-- Compass tells you which of your holdings are affected, how, and how urgently — grounded in what was actually said, not inferred
+- Compass tells you which of your holdings are affected, how, and how urgent; grounded in what was actually said, not inferred
 
 **For founders:**
 - Submit your pitch video, deck text, or press coverage
