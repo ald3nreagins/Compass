@@ -132,13 +132,18 @@ export default function Shell({ children }) {
             })}
           </nav>
           <div className="my-4 border-t" style={{ borderColor: COLORS.border }} />
-          <nav className="flex flex-col gap-1">
-            {NAV_SECONDARY.map((item) => (
-              <span key={item} className="text-left text-sm px-3 py-2 rounded-md" style={{ color: COLORS.textMuted }}>
-                {item}
-              </span>
-            ))}
-          </nav>
+    <nav className="flex flex-col gap-1">
+  <Link
+    to="/settings"
+    className="text-left text-sm px-3 py-2 rounded-md transition-colors"
+    style={location.pathname === '/settings' ? { background: COLORS.elevated, color: COLORS.text } : { color: COLORS.textMuted }}
+  >
+    Settings
+  </Link>
+  <span className="text-left text-sm px-3 py-2 rounded-md" style={{ color: COLORS.textMuted }}>
+    Sources
+  </span>
+</nav>
         </aside>
 
         {/* Page content */}
