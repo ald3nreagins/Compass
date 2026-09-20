@@ -111,7 +111,7 @@ All `/api/transcribe/**` endpoints require a `Bearer` token from `/api/auth/logi
 |---|---|---|
 | Steven Rocca | [@stevenrocca3](https://github.com/stevenrocca3) | [steven-rocca](https://www.linkedin.com/in/steven-rocca-24031b303/) |
 | Alvin Pan | [@blizzardblaze174](https://github.com/blizzardblaze174) | [alvin-pan1](https://www.linkedin.com/in/alvin-pan1/) |
-| Alden Reagins | — | — |
+| Alden Reagins | [@ald3nreagins](https://github.com/ald3nreagins) | [alden-reagins](https://www.linkedin.com/in/aldenreagins/) |
 | Matt | — | — |
 
 ## License
