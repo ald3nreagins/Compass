@@ -24,9 +24,6 @@ function fmtArr(v) {
   return `$${(v / 1_000_000).toFixed(1)}M`;
 }
 
-// Parses strings like "Q3 2026" into a sortable number (2026 * 4 + 3).
-// Falls back to 0 for anything that doesn't match, so unexpected formats
-// don't crash sorting — they just sort first.
 function quarterSortKey(q) {
   const match = /Q(\d)\s*(\d{4})/i.exec(q || '');
   if (!match) return 0;
@@ -100,6 +97,122 @@ function QuarterDropdown({ quarters, selected, onSelect }) {
   );
 }
 
+// ---- Recent signals helpers (mirrors the logic in Signals.jsx) ----
+
+function toneFor(analysis, type) {
+  if (analysis.notApplicable) return COLORS.accent;
+  if (type === 'portfolio-impact') {
+    return analysis.overallImpact === 'positive'
+      ? COLORS.add
+      : analysis.overallImpact === 'negative'
+      ? COLORS.sell
+      : analysis.overallImpact === 'mixed'
+      ? COLORS.hold
+      : COLORS.accent;
+  }
+  if (analysis.sentiment === 'confident') return COLORS.add;
+  if (analysis.sentiment === 'overhyped') return COLORS.sell;
+  return COLORS.accent;
+}
+
+function summaryFor(analysis, type) {
+  if (analysis.notApplicable) return analysis.reason;
+  if (type === 'portfolio-impact') return analysis.eventSummary;
+  return analysis.productDescription || analysis.companyName || 'Analyzed pitch';
+}
+
+function formatRelativeDate(iso) {
+  try {
+    const date = new Date(iso);
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  } catch {
+    return '';
+  }
+}
+
+function RecentSignals() {
+  const [signals, setSignals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    api
+      .getHistory()
+      .then((data) => {
+        setSignals(data.slice(0, 4)); // most recent first, already ordered by backend
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <p className="text-sm" style={{ color: COLORS.textMuted }}>
+        Loading recent signals…
+      </p>
+    );
+  }
+
+  if (error) {
+    return (
+      <p className="text-sm" style={{ color: COLORS.textMuted }}>
+        Couldn't load recent signals.
+      </p>
+    );
+  }
+
+  if (signals.length === 0) {
+    return (
+      <p className="text-sm" style={{ color: COLORS.textMuted }}>
+        No signals yet — run an analysis from the Analyze tab.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {signals.map((s) => {
+        let analysis = {};
+        try {
+          analysis = JSON.parse(s.analysisJson);
+        } catch {
+          analysis = {};
+        }
+        const tone = toneFor(analysis, s.analysisType);
+        return (
+          <div key={s.id} className="flex items-start gap-2.5">
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full shrink-0 mt-1.5"
+              style={{ background: tone }}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm truncate" style={{ color: COLORS.text }}>
+                {summaryFor(analysis, s.analysisType)}
+              </p>
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                {s.analysisType === 'portfolio-impact' ? 'Portfolio Impact' : 'Pitch Evaluation'} ·{' '}
+                {formatRelativeDate(s.createdAt)}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---- Main page ----
+
 export default function PortfolioOverviewPage() {
   const [allCompanies, setAllCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +234,7 @@ export default function PortfolioOverviewPage() {
           (a, b) => quarterSortKey(a) - quarterSortKey(b)
         );
         setAvailableQuarters(uniqueQuarters);
-        setSelectedQuarter(uniqueQuarters[uniqueQuarters.length - 1] || null); // default to latest
+        setSelectedQuarter(uniqueQuarters[uniqueQuarters.length - 1] || null);
 
         setLoading(false);
       })
@@ -133,7 +246,6 @@ export default function PortfolioOverviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // One row per company: filtered by fund AND by the single selected quarter.
   const companies = allCompanies.filter((c) => {
     const fundMatch = selectedFund === 'All funds' || c.fundName === selectedFund;
     const quarterMatch = c.snapshotQuarter === selectedQuarter;
@@ -208,9 +320,7 @@ export default function PortfolioOverviewPage() {
 
         <div className="rounded-lg p-5" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
           <p className="text-sm font-medium mb-4">Recent signals</p>
-          <p className="text-sm" style={{ color: COLORS.textMuted }}>
-            Signals will appear here once the Analyze pipeline is connected.
-          </p>
+          <RecentSignals />
         </div>
       </div>
 
