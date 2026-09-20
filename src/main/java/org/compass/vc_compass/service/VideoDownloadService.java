@@ -18,6 +18,7 @@ public class VideoDownloadService {
                 "yt-dlp",
                 "-x",
                 "--audio-format", "mp3",
+                "--extractor-args", "youtube:player_client=android",
                 "-o", outputTemplate,
                 videoUrl
         );
