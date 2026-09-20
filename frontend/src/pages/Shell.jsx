@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, Check } from 'lucide-react';
+import { useFund } from './FundContext';
 
 export const COLORS = {
   bg: '#0B0F17',
@@ -24,8 +26,12 @@ const NAV_ROUTES = {
 
 const NAV_SECONDARY = ['Sources', 'Settings'];
 
-export default function Shell({ children, fund = 'All funds' }) {
+export default function Shell({ children }) {
   const location = useLocation();
+  const { selectedFund, setSelectedFund, availableFunds } = useFund();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const options = ['All funds', ...availableFunds];
 
   return (
     <div
@@ -54,13 +60,50 @@ export default function Shell({ children, fund = 'All funds' }) {
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm"
-            style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
-          >
-            {fund}
-            <ChevronDown size={14} style={{ color: COLORS.textMuted }} />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setDropdownOpen((v) => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm"
+              style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+            >
+              {selectedFund}
+              <ChevronDown size={14} style={{ color: COLORS.textMuted }} />
+            </button>
+
+            {dropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
+                <div
+                  className="absolute right-0 mt-2 w-56 rounded-md overflow-hidden z-20 max-h-80 overflow-y-auto"
+                  style={{ background: COLORS.elevated, border: `1px solid ${COLORS.border}` }}
+                >
+                  {options.length === 0 ? (
+                    <p className="px-3 py-2 text-sm" style={{ color: COLORS.textMuted }}>
+                      No funds loaded yet
+                    </p>
+                  ) : (
+                    options.map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => {
+                          setSelectedFund(opt);
+                          setDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors"
+                        style={{ color: opt === selectedFund ? COLORS.text : COLORS.textMuted }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = COLORS.surface)}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        {opt}
+                        {opt === selectedFund && <Check size={14} style={{ color: COLORS.accent }} />}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold"
             style={{ background: COLORS.elevated, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
