@@ -129,7 +129,29 @@ export default function CandidatesPage() {
   });
   const portfolioTotal = currentPortfolio.length || 1;
 
-  const ranked = candidates
+  // The source data repeats each real candidate once per target fund (the
+  // same company tagged under multiple fundName values) — dedupe by company
+  // name so each real prospect appears exactly once, keeping the first row.
+  const uniqueCandidatesMap = new Map();
+  candidates.forEach((c) => {
+    const key = (c.companyName || '').toLowerCase().trim();
+    if (key && !uniqueCandidatesMap.has(key)) uniqueCandidatesMap.set(key, c);
+  });
+  const uniqueCandidates = Array.from(uniqueCandidatesMap.values());
+
+  // Exclude companies already held in the fund(s) currently in view — using
+  // fundFiltered (not the raw, unfiltered "holdings") so this respects the
+  // fund dropdown instead of always checking against every fund at once,
+  // which was excluding almost everything (Y Combinator is itself one of
+  // the 9 tracked funds, and much of the candidate data is YC-sourced).
+  const heldCompanyNames = new Set(
+    fundFiltered.map((h) => (h.companyName || '').toLowerCase().trim()).filter(Boolean)
+  );
+  const eligibleCandidates = uniqueCandidates.filter(
+    (c) => !heldCompanyNames.has((c.companyName || '').toLowerCase().trim())
+  );
+
+  const ranked = eligibleCandidates
     .map((c) => {
       const group = groupIndustry(c.industry);
       const share = (groupCounts[group] || 0) / portfolioTotal;
