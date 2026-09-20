@@ -20,12 +20,19 @@ public class VideoDownloadService {
 
     public byte[] downloadAudioFromUrl(String videoUrl) throws IOException, InterruptedException {
         String tempId = UUID.randomUUID().toString();
+        String outputTemplate = "/tmp/" + tempId + ".%(ext)s";
 
-        Path tempDir = Path.of(System.getProperty("java.io.tmpdir"));
-        String outputTemplate = tempDir.resolve(tempId + ".%(ext)s").toString();
+        ProcessBuilder pb = new ProcessBuilder(
+                "yt-dlp",
+                "-x",
+                "--audio-format", "mp3",
+                "-o", outputTemplate,
+                videoUrl
+        );
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
 
-        Process process = startYtDlp(outputTemplate, videoUrl);
-
+        // Capture output for debugging failures
         String output = new String(process.getInputStream().readAllBytes());
         int exitCode = process.waitFor();
 
