@@ -7,10 +7,10 @@ import org.compass.vc_compass.dto.TranscriptionResult;
 import org.compass.vc_compass.model.Submission;
 import org.compass.vc_compass.model.User;
 import org.compass.vc_compass.repository.SubmissionRepository;
-import org.compass.vc_compass.repository.UserRepository;
 import org.compass.vc_compass.security.UserPrincipal;
 import org.compass.vc_compass.service.ClaudeService;
 import org.compass.vc_compass.service.ElevenLabsService;
+import org.compass.vc_compass.service.TextExtractionService;
 import org.compass.vc_compass.service.VideoDownloadService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,17 +30,20 @@ public class TranscriptionController {
     private final VideoDownloadService videoDownloadService;
     private final SubmissionRepository submissionRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final TextExtractionService textExtractionService;
 
     public TranscriptionController(
             ElevenLabsService elevenLabsService,
             ClaudeService claudeService,
             VideoDownloadService videoDownloadService,
-            SubmissionRepository submissionRepository
+            SubmissionRepository submissionRepository,
+            TextExtractionService textExtractionService
     ) {
         this.elevenLabsService = elevenLabsService;
         this.claudeService = claudeService;
         this.videoDownloadService = videoDownloadService;
         this.submissionRepository = submissionRepository;
+        this.textExtractionService = textExtractionService;
     }
 
     private User getCurrentUser() {
@@ -104,16 +107,64 @@ public class TranscriptionController {
         }
     }
 
+    // Analyze raw pasted text directly — no transcription needed
+    @PostMapping("/text")
+    public ResponseEntity<?> analyzeText(@RequestBody TextRequest request) {
+        try {
+            String content = request.getText();
+            Object analysis;
+            String analysisType;
+
+            if ("portfolio".equals(request.getMode())) {
+                analysis = claudeService.analyzePortfolioImpact(content, request.getPortfolioCompanies());
+                analysisType = "portfolio-impact";
+            } else {
+                analysis = claudeService.extractFromTranscript(content);
+                analysisType = "pitch";
+            }
+
+            saveSubmission("Pasted text", content, analysis, analysisType);
+
+            return ResponseEntity.ok(new TranscribeResponse(content, analysis));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to analyze text: " + e.getMessage());
+        }
+    }
+
+    // Fetch and analyze text from an article/webpage URL (not a video)
+    @PostMapping("/text-url")
+    public ResponseEntity<?> analyzeTextFromUrl(@RequestBody TextUrlRequest request) {
+        try {
+            String content = textExtractionService.extractTextFromUrl(request.getUrl());
+            Object analysis;
+            String analysisType;
+
+            if ("portfolio".equals(request.getMode())) {
+                analysis = claudeService.analyzePortfolioImpact(content, request.getPortfolioCompanies());
+                analysisType = "portfolio-impact";
+            } else {
+                analysis = claudeService.extractFromTranscript(content);
+                analysisType = "pitch";
+            }
+
+            saveSubmission(request.getUrl(), content, analysis, analysisType);
+
+            return ResponseEntity.ok(new TranscribeResponse(content, analysis));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to analyze URL text: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/history")
-public ResponseEntity<?> getSubmissionHistory() {
-    User currentUser = getCurrentUser();
-    List<SubmissionResponse> results = submissionRepository
-            .findBySubmittedByOrderByCreatedAtDesc(currentUser)
-            .stream()
-            .map(SubmissionResponse::new)
-            .toList();
-    return ResponseEntity.ok(results);
-}
+    public ResponseEntity<?> getSubmissionHistory() {
+        User currentUser = getCurrentUser();
+        List<SubmissionResponse> results = submissionRepository
+                .findBySubmittedByOrderByCreatedAtDesc(currentUser)
+                .stream()
+                .map(SubmissionResponse::new)
+                .toList();
+        return ResponseEntity.ok(results);
+    }
 
     private void saveSubmission(String sourceUrl, String transcript, Object analysis, String analysisType) {
         try {
@@ -125,7 +176,6 @@ public ResponseEntity<?> getSubmissionHistory() {
             submission.setSubmittedBy(getCurrentUser());
             submissionRepository.save(submission);
         } catch (Exception e) {
-            // Log but don't fail the request if saving history fails
             System.err.println("Failed to save submission history: " + e.getMessage());
         }
     }
@@ -157,31 +207,57 @@ public ResponseEntity<?> getSubmissionHistory() {
         public void setUrl(String url) { this.url = url; }
     }
 
+    static class TextRequest {
+        private String text;
+        private String mode;
+        private java.util.List<String> portfolioCompanies;
+
+        public String getText() { return text; }
+        public void setText(String text) { this.text = text; }
+        public String getMode() { return mode; }
+        public void setMode(String mode) { this.mode = mode; }
+        public java.util.List<String> getPortfolioCompanies() { return portfolioCompanies; }
+        public void setPortfolioCompanies(java.util.List<String> portfolioCompanies) { this.portfolioCompanies = portfolioCompanies; }
+    }
+
+    static class TextUrlRequest {
+        private String url;
+        private String mode;
+        private java.util.List<String> portfolioCompanies;
+
+        public String getUrl() { return url; }
+        public void setUrl(String url) { this.url = url; }
+        public String getMode() { return mode; }
+        public void setMode(String mode) { this.mode = mode; }
+        public java.util.List<String> getPortfolioCompanies() { return portfolioCompanies; }
+        public void setPortfolioCompanies(java.util.List<String> portfolioCompanies) { this.portfolioCompanies = portfolioCompanies; }
+    }
+
     static class TranscribeResponse {
         public String transcript;
-        public ExtractionResult analysis;
+        public Object analysis;
 
-        public TranscribeResponse(String transcript, ExtractionResult analysis) {
+        public TranscribeResponse(String transcript, Object analysis) {
             this.transcript = transcript;
             this.analysis = analysis;
         }
     }
 
     static class SubmissionResponse {
-    public Long id;
-    public String sourceUrl;
-    public String transcript;
-    public String analysisJson;
-    public String analysisType;
-    public String createdAt;
+        public Long id;
+        public String sourceUrl;
+        public String transcript;
+        public String analysisJson;
+        public String analysisType;
+        public String createdAt;
 
-    public SubmissionResponse(Submission s) {
-        this.id = s.getId();
-        this.sourceUrl = s.getSourceUrl();
-        this.transcript = s.getTranscript();
-        this.analysisJson = s.getAnalysisJson();
-        this.analysisType = s.getAnalysisType();
-        this.createdAt = s.getCreatedAt().toString();
+        public SubmissionResponse(Submission s) {
+            this.id = s.getId();
+            this.sourceUrl = s.getSourceUrl();
+            this.transcript = s.getTranscript();
+            this.analysisJson = s.getAnalysisJson();
+            this.analysisType = s.getAnalysisType();
+            this.createdAt = s.getCreatedAt().toString();
+        }
     }
-}
 }

@@ -10,7 +10,6 @@ function titleCase(str) {
     .join(' ');
 }
 
-// Splits a paragraph into short, scannable bullet points by sentence.
 function toBullets(value) {
   if (value == null) return [];
   if (Array.isArray(value)) return value.filter(Boolean);
@@ -22,7 +21,9 @@ function toBullets(value) {
 }
 
 export default function Analyze() {
+  const [sourceType, setSourceType] = useState('video'); // 'video' | 'article' | 'text'
   const [url, setUrl] = useState('');
+  const [pastedText, setPastedText] = useState('');
   const [portfolioInput, setPortfolioInput] = useState(() => getDefaultPortfolio().join(', '));
   const [mode, setMode] = useState('pitch'); // 'pitch' | 'portfolio'
   const [loading, setLoading] = useState(false);
@@ -36,16 +37,23 @@ export default function Analyze() {
     setLoading(true);
 
     try {
+      const companies = portfolioInput
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
+
       let data;
-      if (mode === 'pitch') {
-        data = await api.analyzeUrl(url);
+
+      if (sourceType === 'video') {
+        data = mode === 'pitch'
+          ? await api.analyzeUrl(url)
+          : await api.analyzePortfolioImpact(url, companies);
+      } else if (sourceType === 'article') {
+        data = await api.analyzeTextUrl(url, mode, companies);
       } else {
-        const companies = portfolioInput
-          .split(',')
-          .map((c) => c.trim())
-          .filter(Boolean);
-        data = await api.analyzePortfolioImpact(url, companies);
+        data = await api.analyzeText(pastedText, mode, companies);
       }
+
       setResult(data);
     } catch (err) {
       setError(err.message || 'Analysis failed');
@@ -53,6 +61,12 @@ export default function Analyze() {
       setLoading(false);
     }
   }
+
+  const sourceLabels = {
+    video: 'Video URL',
+    article: 'Article URL',
+    text: 'Paste Text',
+  };
 
   return (
     <Shell>
@@ -62,8 +76,27 @@ export default function Analyze() {
         className="rounded-lg p-6 mb-6"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
       >
+        <div className="flex gap-2 mb-3">
+          {Object.entries(sourceLabels).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSourceType(key)}
+              className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+              style={
+                sourceType === key
+                  ? { background: COLORS.elevated, color: COLORS.text }
+                  : { color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex gap-2 mb-4">
           <button
+            type="button"
             onClick={() => setMode('pitch')}
             className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
             style={
@@ -75,6 +108,7 @@ export default function Analyze() {
             Pitch Evaluation
           </button>
           <button
+            type="button"
             onClick={() => setMode('portfolio')}
             className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
             style={
@@ -88,14 +122,35 @@ export default function Analyze() {
         </div>
 
         <form onSubmit={handleAnalyze}>
-          <input
-            placeholder="Video URL (YouTube, etc.)"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            className="w-full mb-3 px-3 py-2 rounded-md text-sm bg-transparent outline-none"
-            style={{ border: `1px solid ${COLORS.border}`, color: COLORS.text }}
-            required
-          />
+          {(sourceType === 'video' || sourceType === 'article') && (
+            <>
+              <input
+                placeholder={sourceType === 'video' ? 'Video URL (YouTube, etc.)' : 'Article or press release URL'}
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="w-full mb-2 px-3 py-2 rounded-md text-sm bg-transparent outline-none"
+                style={{ border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+                required
+              />
+              {sourceType === 'article' && (
+                <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+                  If the article is behind a paywall, switch to "Paste Text" and copy the content directly.
+                </p>
+              )}
+            </>
+          )}
+
+          {sourceType === 'text' && (
+            <textarea
+              placeholder="Paste pitch text, transcript, or article content here…"
+              value={pastedText}
+              onChange={(e) => setPastedText(e.target.value)}
+              rows={7}
+              className="w-full mb-3 px-3 py-2 rounded-md text-sm bg-transparent outline-none resize-none"
+              style={{ border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+              required
+            />
+          )}
 
           {mode === 'portfolio' && (
             <input
@@ -114,7 +169,11 @@ export default function Analyze() {
             className="px-4 py-2 rounded-md text-sm font-medium"
             style={{ background: COLORS.accent, color: '#fff' }}
           >
-            {loading ? 'Analyzing… (this can take 30–60s)' : 'Analyze'}
+            {loading
+              ? sourceType === 'video'
+                ? 'Analyzing… (this can take 30–60s)'
+                : 'Analyzing…'
+              : 'Analyze'}
           </button>
         </form>
 
@@ -144,7 +203,7 @@ export default function Analyze() {
                 className="text-xs font-medium tracking-wide uppercase cursor-pointer"
                 style={{ color: COLORS.textMuted }}
               >
-                View Full Transcript
+                View Full {sourceType === 'video' ? 'Transcript' : 'Source Text'}
               </summary>
               <p className="text-xs mt-3 whitespace-pre-wrap leading-relaxed" style={{ color: COLORS.textMuted }}>
                 {result.transcript}
@@ -157,7 +216,6 @@ export default function Analyze() {
   );
 }
 
-// Prominent color-coded status strip: blue = unrelated, green = positive, red = negative
 function StatusBanner({ tone, title, bullets }) {
   const toneColor = {
     unrelated: COLORS.accent,

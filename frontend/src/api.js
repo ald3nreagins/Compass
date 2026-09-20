@@ -38,6 +38,18 @@ export const api = {
       body: JSON.stringify({ url, portfolioCompanies }),
     }),
 
+  analyzeText: (text, mode, portfolioCompanies) =>
+    request('/transcribe/text', {
+    method: 'POST',
+    body: JSON.stringify({ text, mode, portfolioCompanies }),
+  }),
+
+  analyzeTextUrl: (url, mode, portfolioCompanies) =>
+    request('/transcribe/text-url', {
+    method: 'POST',
+    body: JSON.stringify({ url, mode, portfolioCompanies }),
+  }),
+
   getHistory: () => request('/transcribe/history'),
 
   getPortfolioHoldings: () => request('/portfolio/holdings'),
