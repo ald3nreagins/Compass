@@ -24,8 +24,6 @@ const NAV_ROUTES = {
   Candidates: '/candidates',
 };
 
-const NAV_SECONDARY = ['Sources', 'Settings'];
-
 export default function Shell({ children }) {
   const location = useLocation();
   const { selectedFund, setSelectedFund, availableFunds } = useFund();
@@ -49,22 +47,22 @@ export default function Shell({ children }) {
         </Link>
 
         <form
-  onSubmit={(e) => {
-    e.preventDefault();
-    const query = e.target.elements.searchInput.value.trim();
-    if (query) navigate(`/signals?q=${encodeURIComponent(query)}`);
-  }}
-  className="flex items-center gap-2 px-3 py-1.5 rounded-md w-80"
-  style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
->
-  <Search size={14} style={{ color: COLORS.textMuted }} />
-  <input
-    name="searchInput"
-    placeholder="Search signals, companies…"
-    className="bg-transparent outline-none text-sm w-full"
-    style={{ color: COLORS.text }}
-  />
-</form>
+          onSubmit={(e) => {
+            e.preventDefault();
+            const query = e.target.elements.searchInput.value.trim();
+            if (query) navigate(`/signals?q=${encodeURIComponent(query)}`);
+          }}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md w-80"
+          style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+        >
+          <Search size={14} style={{ color: COLORS.textMuted }} />
+          <input
+            name="searchInput"
+            placeholder="Search signals, companies…"
+            className="bg-transparent outline-none text-sm w-full"
+            style={{ color: COLORS.text }}
+          />
+        </form>
 
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -139,22 +137,22 @@ export default function Shell({ children }) {
             })}
           </nav>
           <div className="my-4 border-t" style={{ borderColor: COLORS.border }} />
-    <nav className="flex flex-col gap-1">
-  <Link
-    to="/settings"
-    className="text-left text-sm px-3 py-2 rounded-md transition-colors"
-    style={location.pathname === '/settings' ? { background: COLORS.elevated, color: COLORS.text } : { color: COLORS.textMuted }}
-  >
-    Settings
-  </Link>
-  <Link
-  to="/sources"
-  className="text-left text-sm px-3 py-2 rounded-md transition-colors"
-  style={location.pathname === '/sources' ? { background: COLORS.elevated, color: COLORS.text } : { color: COLORS.textMuted }}
->
-  Sources
-</Link>
-</nav>
+          <nav className="flex flex-col gap-1">
+            <Link
+              to="/settings"
+              className="text-left text-sm px-3 py-2 rounded-md transition-colors"
+              style={location.pathname === '/settings' ? { background: COLORS.elevated, color: COLORS.text } : { color: COLORS.textMuted }}
+            >
+              Settings
+            </Link>
+            <Link
+              to="/sources"
+              className="text-left text-sm px-3 py-2 rounded-md transition-colors"
+              style={location.pathname === '/sources' ? { background: COLORS.elevated, color: COLORS.text } : { color: COLORS.textMuted }}
+            >
+              Sources
+            </Link>
+          </nav>
         </aside>
 
         {/* Page content */}

@@ -21,7 +21,7 @@ export default function Settings() {
 
   function handleLogout() {
     clearToken();
-    navigate('/login');
+    navigate('/');
   }
 
   function handleSavePortfolio(e) {
@@ -112,6 +112,19 @@ export default function Settings() {
             Compass analyzes pitch videos and news for VC due diligence, using ElevenLabs for
             transcription and Claude for structured extraction and portfolio impact analysis.
           </p>
+        </div>
+
+        {/* More / marketing link */}
+        <div
+          className="rounded-lg p-5"
+          style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+        >
+          <p className="text-xs font-semibold tracking-wide uppercase mb-2" style={{ color: COLORS.textMuted }}>
+            More
+          </p>
+          <a href="/" className="text-sm" style={{ color: COLORS.accent }}>
+            View marketing site &amp; pricing →
+          </a>
         </div>
       </div>
     </Shell>
