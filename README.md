@@ -4,7 +4,7 @@
 
 Compass is a due-diligence tool for venture capital investors and startup founders. It transcribes and analyzes pitch videos, news, and market events; turning unstructured video, audio, and text into structured, sourced signals for investment decisions.
 
-Built at Steelhacks, September 19–20, 2026.
+Built at Steelhacks XII, September 19–20, 2026.
 
 ---
 
@@ -116,4 +116,4 @@ All `/api/transcribe/**` endpoints require a `Bearer` token from `/api/auth/logi
 
 ## License
 
-This project was built for a hackathon and is provided as-is, without warranty.
+This project was built for Steelhacks XII and is provided as-is, without warranty.
