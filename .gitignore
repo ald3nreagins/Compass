@@ -17,6 +17,7 @@ target/
 .env
 .env.local
 application-local.properties
+load-env.sh
 
 # React / Node
 frontend/node_modules/
@@ -34,4 +35,4 @@ logs/
 
 # OS/editor junk
 *.swp
-*~load-env.sh
+*~
