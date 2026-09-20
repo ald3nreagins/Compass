@@ -41,6 +41,8 @@ export const api = {
   getHistory: () => request('/transcribe/history'),
 
   getPortfolioHoldings: () => request('/portfolio/holdings'),
+
+  getCandidates: () => request('/candidates'),
 };
 
 export function saveToken(token) {
