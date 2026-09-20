@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import Shell, { COLORS } from './Shell';
+import { useFund } from './FundContext';
+import { api } from '../api';
 
 const HEALTH_KEYS = ['ACCELERATING', 'STABLE', 'BASELINE', 'REVIEW'];
 
@@ -44,18 +46,16 @@ function SignalBadge({ signal }) {
 }
 
 export default function PortfolioOverviewPage() {
-  const [companies, setCompanies] = useState([]);
+  const [allCompanies, setAllCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { selectedFund } = useFund();
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/portfolio/holdings')
-      .then((res) => {
-        if (!res.ok) throw new Error(`Server responded ${res.status}`);
-        return res.json();
-      })
+    api
+      .getPortfolioHoldings()
       .then((data) => {
-        setCompanies(data);
+        setAllCompanies(data);
         setLoading(false);
       })
       .catch((err) => {
@@ -64,6 +64,9 @@ export default function PortfolioOverviewPage() {
         setLoading(false);
       });
   }, []);
+
+  const companies =
+    selectedFund === 'All funds' ? allCompanies : allCompanies.filter((c) => c.fundName === selectedFund);
 
   const totalValue = companies.reduce((s, c) => s + (c.arr || 0), 0) / 1_000_000;
   const accelerating = companies.filter((c) => c.healthFlag === 'ACCELERATING').length;
@@ -74,7 +77,7 @@ export default function PortfolioOverviewPage() {
       <div className="flex items-baseline justify-between mb-6">
         <h1 className="text-lg font-semibold">Portfolio overview</h1>
         <span className="text-xs" style={{ color: COLORS.textMuted }}>
-          {loading ? 'Syncing...' : error ? 'Sync failed' : 'Last synced just now'}
+          {loading ? 'Syncing...' : error ? 'Sync failed' : `Last synced just now · ${selectedFund}`}
         </span>
       </div>
 
@@ -83,10 +86,21 @@ export default function PortfolioOverviewPage() {
           className="rounded-lg p-4 mb-6 text-sm"
           style={{ background: `${COLORS.sell}1A`, color: COLORS.sell, border: `1px solid ${COLORS.sell}` }}
         >
-          Couldn't load portfolio data: {error}. Confirm the Spring Boot server is running on port 8080.
+          Couldn't load portfolio data: {error}. Confirm the Spring Boot server is running on port 8080 and that
+          you're logged in.
         </div>
       )}
 
+      {!loading && !error && companies.length === 0 && (
+        <div
+          className="rounded-lg p-4 mb-6 text-sm"
+          style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: COLORS.textMuted }}
+        >
+          No holdings found for {selectedFund}.
+        </div>
+      )}
+
+      {/* Stat cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Portfolio value', value: `$${totalValue.toFixed(0)}M` },
@@ -103,6 +117,7 @@ export default function PortfolioOverviewPage() {
         ))}
       </div>
 
+      {/* Health + Signals row */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="rounded-lg p-5" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
           <p className="text-sm font-medium mb-4">Portfolio health</p>
@@ -127,6 +142,7 @@ export default function PortfolioOverviewPage() {
         </div>
       </div>
 
+      {/* Companies table */}
       <div className="rounded-lg overflow-hidden" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
         <div className="px-5 py-4 border-b" style={{ borderColor: COLORS.border }}>
           <p className="text-sm font-medium">Portfolio companies</p>

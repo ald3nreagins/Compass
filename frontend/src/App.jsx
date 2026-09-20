@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { isLoggedIn } from './api';
+import { FundProvider } from './pages/FundContext';
 import Login from './pages/Login';
 import PortfolioOverview from './pages/PortfolioOverview';
 import Analyze from './pages/Analyze';
@@ -13,16 +14,53 @@ function RequireAuth({ children }) {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<RequireAuth><PortfolioOverview /></RequireAuth>} />
-        <Route path="/analyze" element={<RequireAuth><Analyze /></RequireAuth>} />
-        <Route path="/portfolio" element={<RequireAuth><Portfolio /></RequireAuth>} />
-        <Route path="/signals" element={<RequireAuth><Signals /></RequireAuth>} />
-        <Route path="/candidates" element={<RequireAuth><Candidates /></RequireAuth>} />
-      </Routes>
-    </BrowserRouter>
+    <FundProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <PortfolioOverview />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/analyze"
+            element={
+              <RequireAuth>
+                <Analyze />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/portfolio"
+            element={
+              <RequireAuth>
+                <Portfolio />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/signals"
+            element={
+              <RequireAuth>
+                <Signals />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/candidates"
+            element={
+              <RequireAuth>
+                <Candidates />
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </FundProvider>
   );
 }
 
